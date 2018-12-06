@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
 from urllib import parse
 import requests
+import time
 import sys
 print(sys.version)
 
@@ -19,66 +20,65 @@ base_url = "https://twitter.com/search?l=&"
 # u = parse.urlencode(p, doseq=True)
 # print(u)
 
-def submit_search(dict_namespace):
-
-    fields = search_values(dict_namespace)
-    web_query = base_url + parse.urlencode(fields, doseq=True)
-    print(web_query)
-
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--window-size=1920,1080")
-    driver = webdriver.Chrome(
-        executable_path='/usr/bin/chromedriver', chrome_options=chrome_options)
-    driver.get(web_query)
-    driver.get_screenshot_as_file('shot.png')
-    driver.quit()
 
 def search_values(dict_namespace):
-    # fields = {
-    # 	"ands": None,
-    # 	"phrase": None,
-    # 	"ors": None,
-    # 	"nots": None,
-    # 	"tag": None,
-    # 	"ref": None,
-    # 	"geo": None,
-    # 	"since": None,
-    # 	"until": None
-    # }
+	# add ref casee here,
 
-    # fields.update(kwargs)
     query = []
     for key, value in dict_namespace.items():
+
         if value != None and key == 'ands':
             item = '{}'.format(value)
-            query.append(item)
         elif value != None and key == 'nots':
-        	item1 = "-"+"{}".format(value)
-        	query.append(item1)
+            item = "-"+"{}".format(value)
+        elif value != None and key == 'tag':
+            item = "#"+"{}".format(value)
         elif value != None and key == 'phrase':
-        	item2 = "{}".format(value)
-        	query.append(item2)
+            item = "{}".format(value)
         elif value != None and key == 'ors':
-        	item3 = value.replace(' ', ' OR ')
-        	query.append(item3)
+            item = value.replace(' ', ' OR ')
         elif value != None and key == 'since':
-        	item4 = '{}:{}'.format(key, value)
-        	query.append(item4)
+            item = '{}:{}'.format(key, value)
         elif value != None and key == 'until':
-        	item5 = '{}:{}'.format(key, value)
-        	query.append(item5)
+            item = '{}:{}'.format(key, value)
         elif value != None and key == 'geo':
-        	item6 = 'near:'+"{}".format(value)
-        	query.append(item6)
-            
+            item = 'near:'+"{}".format(value)
+        else:
+        	continue
+        query.append(item)
+
+        print(query)
 
     query_string = " ".join(query)
     print(query_string)
 
-    fields = {'q':[query_string], 'src':'sprv'}
+    fields = {'q': [query_string], 'src': 'sprv'}
     print(fields)
     return fields
+
+
+def submit_search(dict_namespace):
+
+	fields = search_values(dict_namespace)
+	web_query = base_url + parse.urlencode(fields, doseq=True)
+	print(web_query)
+
+	chrome_options = Options()
+	chrome_options.add_argument("--headless")
+	chrome_options.add_argument("--window-size=1920,1080")
+	driver = webdriver.Chrome(
+	    executable_path='/usr/bin/chromedriver', chrome_options=chrome_options)
+	driver.get(web_query)
+	driver.get_screenshot_as_file('shot.png')
+	driver.find_element_by_xpath("//*['tweet js-stream-tweet']")
+	for i in range(1, 50):
+		driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+		#time.sleep()
+	html_source = driver.page_source
+	#print(html_source)
+	data = html_source.encode('utf-8')
+	print(data)
+	driver.quit()
 
 
 def main():
